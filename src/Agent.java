@@ -12,47 +12,37 @@ public class Agent {
 	public double[][] A_RLX_PROB = { {0.7, 0.3}, {0, 1} };
 	public double[][] A_RLX_REW = { {10, 10}, {5, 5} };	
 	
-	public void calculateReturns(int nVal, double yVal, int state) {
-		double q0ex = instantReward(state, A_EXERCISE);
-		double q0rlx = instantReward(state, A_RELAX);
+	public double calculateReturns(int nVal, double yVal, int state, int action) {
+		double q0 = instantReward(state, action);
+		double futureReward = futureReward(nVal, yVal, state, action);
 		
-		if (nVal == 0) {
-			System.out.println("(F,E)n=0: " + (q0ex));
-			System.out.println("(F,R)n=0: " + (q0rlx));
-		} else {
-			double discFutureEx = yVal * futureReward(nVal, yVal, state, A_EXERCISE);
-			double discFutureRlx = yVal * futureReward(nVal, yVal, state, A_RELAX);
-		
-			System.out.println("(F,E): " + (q0ex + discFutureEx));
-			System.out.println("(F,R): " + (q0rlx + discFutureRlx));
-		}
+		return q0 + yVal*futureReward;
 	}
 	
-	// Here S' doesn't matter because only S, A changes the reward
-	private double vN(int state) {
-		double sExercise = getReward(state, A_EXERCISE, state);
-		double sRelax = getReward(state, A_RELAX, state);
+	private double vN(int state, int nVal, double yVal) {
+		double sExercise = calculateReturns(nVal, yVal, state, A_EXERCISE);
+		double sRelax = calculateReturns(nVal, yVal, state, A_RELAX);
 		
 		return sExercise > sRelax ? sExercise : sRelax;
 	}
 	
 	private double qN(int state, int action) {
 		double psaf = getProbability(state, action, S_FIT);
-		double vnf = vN(S_FIT);
+		double vnf = vN(state, action, S_FIT);
 	
 		double psau = getProbability(state, action, S_UNFIT);
-		double vnu = vN(S_UNFIT);
+		double vnu = vN(state, action, S_UNFIT);
 		
 		return psaf*vnf + psau*vnu;
 	}
 	
-	public double futureReward(int nVal, double yVal, int state, int action) {
+	private double futureReward(int nVal, double yVal, int state, int action) {
 		if(nVal == 1) return qN(state, action);
 		
 		return qN(state, action) + yVal * futureReward(--nVal, yVal, state, action);
 	}
 	
-	public double instantReward(int state, int action) {
+	private double instantReward(int state, int action) {
 		double psaf = getProbability(state, action, S_FIT);
 		double rsaf = getReward(state, action, S_FIT);
 		
@@ -94,7 +84,7 @@ public class Agent {
 	
 	public static void main(String[] args) {
 		Agent agent = new Agent();
-		System.out.println(agent.instantReward(S_UNFIT, A_EXERCISE));
+		System.out.println(agent.calculateReturns(2, 0.9, S_FIT, A_EXERCISE));
 	}
 	
 }
