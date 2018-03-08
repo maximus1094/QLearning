@@ -1,3 +1,4 @@
+package agent;
 
 public class AgentsBrain {
 	
